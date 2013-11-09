@@ -6,6 +6,8 @@
 It allows you to quickly bind keyboard shortcuts to existing menu
 items without writing Python code
 
+[![tabtabtab](imgs/shortcuteditor_thumbnail.png)](imgs/shortcuteditor.png)
+
 
 ## Installation
 
