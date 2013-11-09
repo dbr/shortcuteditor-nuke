@@ -657,7 +657,7 @@ def gui():
 
 
 
-def nuke_setup(self):
+def nuke_setup():
     """Call this from menu.py to setup stuff
     """
 
