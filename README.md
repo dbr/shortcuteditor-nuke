@@ -31,6 +31,9 @@ Then in `~/.nuke/menu.py` add the following:
 
 ## Notes
 
+Should work in Nuke 6.3v3 onwards (when the nuke.Menu.setShortcut
+method was added)
+
 The shortcuts overrides are saved in `~/.nuke/shortcuteditor_settings.json`
 
 You can search for menu items either by name ("Search by text"), or by
