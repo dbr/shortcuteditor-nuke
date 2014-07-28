@@ -339,7 +339,7 @@ def _restore_overrides(overrides):
         m = nuke.menu(menu_name)
         item = m.findItem(path)
         if item is None:
-            nuke.warn("WARNING: %r (menu: %r) does not exist?" % (path, menu_name))
+            nuke.warning("WARNING: %r (menu: %r) does not exist?" % (path, menu_name))
         else:
             #print "Restoring shortcut %r for %r (menu: %r)" % (key, path, menu_name)
             item.setShortcut(key)
