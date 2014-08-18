@@ -661,8 +661,10 @@ def nuke_setup():
     """Call this from menu.py to setup stuff
     """
 
-    # Load saved shortcuts
-    load_shortcuts()
+    # Load saved shortcuts once Nuke has started up (i.e when it has
+    # created the Root node - otherwise some menu items might be
+    # created after this function runs)
+    nuke.addOnCreate(lambda: load_shortcuts(), nodeClass="Root")
 
     # Menu item to open shortcut editor
     nuke.menu("Nuke").addCommand("Edit/Edit keyboard shortcuts", gui)
