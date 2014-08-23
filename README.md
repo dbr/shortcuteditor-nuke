@@ -59,3 +59,9 @@ usage of the key (using the "Search by key")
 
 * `v1.0`
  * Initial version
+* `v1.1`
+ * Fixed error in error handling when a shortcut is added for a menu
+   item which disappers.
+ * `nuke_setup` method works as expected when installed earlier in
+   NUKE_PATH. Previously it might run before some menu items were
+   added, so the shortcut was never set.
