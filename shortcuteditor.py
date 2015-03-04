@@ -510,7 +510,7 @@ class ShortcutEditorWidget(QtGui.QDialog):
             return self._cache_items
         else:
             items = []
-            for menu in ("Nodes", "Nuke", "Viewer"):
+            for menu in ("Nodes", "Nuke", "Viewer", "Node Graph"):
                 items.extend(_find_menu_items(nuke.menu(menu)))
             self._cache_items = items
             return items
