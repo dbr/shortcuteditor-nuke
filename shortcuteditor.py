@@ -25,7 +25,7 @@ from Qt import QtCore, QtWidgets, QtGui
 from Qt.QtCore import Qt
 
 
-__version__ = "1.1_dev"
+__version__ = "1.2"
 
 
 class KeySequenceWidget(QtWidgets.QWidget):
@@ -115,7 +115,8 @@ class KeySequenceButton(QtWidgets.QPushButton):
         if self._isrecording:
             s = self._recseq.toString(QtGui.QKeySequence.NativeText).replace('&', '&&')
             if self._modifiers:
-                if s: s += ","
+                if s: 
+                    s += ","
                 s += QtGui.QKeySequence(self._modifiers).toString(QtGui.QKeySequence.NativeText)
             elif self._recseq.isEmpty():
                 s = "Input"
@@ -206,7 +207,7 @@ class KeySequenceButton(QtWidgets.QPushButton):
             self._timer.start(600)
 
     def startRecording(self):
-        #self.setFocus(True) # because of QTBUG 17810
+        # self.setFocus(True)  # because of QTBUG 17810
         self.setDown(True)
         self.setStyleSheet("text-align: left;")
         self._isrecording = True
@@ -253,9 +254,9 @@ def _find_menu_items(menu, _path = None, _top_menu_name = None):
     for i in mi:
         if isinstance(i, nuke.Menu):
             # Sub-menu, recurse
-            mname = i.name().replace("&", "")
-            subpath = "/".join(x for x in (_path, mname) if x is not None)
-            sub_found = _find_menu_items(menu = i, _path = subpath, _top_menu_name = _top_menu_name)
+            m_name = i.name().replace("&", "")
+            sub_path = "/".join(x for x in (_path, m_name) if x is not None)
+            sub_found = _find_menu_items(menu=i, _path=sub_path, _top_menu_name=_top_menu_name)
             found.extend(sub_found)
         elif isinstance(i, nuke.MenuItem):
             if i.name() == "":
@@ -265,8 +266,8 @@ def _find_menu_items(menu, _path = None, _top_menu_name = None):
                 # Skip hidden items
                 continue
 
-            subpath = "/".join(x for x in (_path, i.name()) if x is not None)
-            found.append({'menuobj': i, 'menupath': subpath, 'top_menu_name': _top_menu_name})
+            sub_path = "/".join(x for x in (_path, i.name()) if x is not None)
+            found.append({'menuobj': i, 'menupath': sub_path, 'top_menu_name': _top_menu_name})
 
     return found
 
@@ -315,7 +316,7 @@ def _save_yaml(obj, path):
             try:
                 os.makedirs(ndir)
             except OSError, e:
-                if e.errno != 17: # errno 17 is "already exists"
+                if e.errno != 17:  # errno 17 is "already exists"
                     raise
 
         f = open(path, "w")
@@ -351,7 +352,6 @@ def _overrides_as_code(overrides):
         menu_name, _, path = item.partition("/")
 
         menus.setdefault(menu_name, []).append((path, key))
-
 
     lines = []
     lines.append("def apply_key_overrides():")
@@ -539,9 +539,11 @@ class ShortcutEditorWidget(QtWidgets.QDialog):
             w.setShortcut(shortcut)
 
             self.table.setCellWidget(rownum, 0, w)
-            self.table.setCellWidget(rownum, 1, QtWidgets.QLabel("%s (menu: %s)" % (menuitem['menupath'], menuitem['top_menu_name'])))
+            self.table.setCellWidget(rownum, 1, QtWidgets.QLabel("%s (menu: %s)" % (menuitem['menupath'], 
+                                                                                    menuitem['top_menu_name'])))
 
-            w.keySequenceChanged.connect(lambda menuitem=menuitem, w=w: self.setkey(menuitem = menuitem, shortcut_widget=w))
+            w.keySequenceChanged.connect(lambda menuitem=menuitem, w=w: self.setkey(menuitem=menuitem, 
+                                                                                    shortcut_widget=w))
 
     def setkey(self, menuitem, shortcut_widget):
         """Called when shortcut is edited
