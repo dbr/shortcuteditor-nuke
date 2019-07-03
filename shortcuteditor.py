@@ -558,8 +558,39 @@ class ShortcutEditorWidget(QtWidgets.QDialog):
 
         Updates the Nuke menu, and puts the key in the Overrides setting-thing
         """
-        menuitem['menuobj'].setShortcut(shortcut_widget.shortcut().toString())
-        self.settings.overrides["%s/%s" % (menuitem['top_menu_name'], menuitem['menupath'])] = shortcut_widget.shortcut().toString()
+
+        # Check if shortcut is already assigned to something else:
+        shortcut = shortcut_widget.shortcut().toString()
+        menu_items = self.list_menu()
+        for other_item in menu_items:
+            if shortcut and other_item['menuobj'].shortcut() == shortcut and other_item != menuitem:
+                answer = self.confirm_override(other_item, shortcut)
+                if not answer:
+                    shortcut_widget.setShortcut(QtGui.QKeySequence(''))
+                    return
+
+                # Un-assign the shortcut first
+                other_item['menuobj'].setShortcut('')
+                # TODO: Refresh the associated widget as well
+
+        menuitem['menuobj'].setShortcut(shortcut)
+        self.settings.overrides[
+            "%s/%s" % (menuitem['top_menu_name'], menuitem['menupath'])] = shortcut_widget.shortcut().toString()
+
+    def confirm_override(self, menu_item, shortcut):
+        """ Ask the user if they are sure they want to override the shortcut"""
+        mb = QtWidgets.QMessageBox(self)
+
+        mb.setText("Shortcut '%s' is already assigned to %s (Menu: %s)." % (shortcut,
+                                                                            menu_item['menupath'],
+                                                                            menu_item['top_menu_name']))
+        mb.setInformativeText("Are you sure you want to replace it?")
+        mb.setIcon(QtWidgets.QMessageBox.Warning)
+
+        mb.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+        mb.setDefaultButton(QtWidgets.QMessageBox.Yes)
+        ret = mb.exec_()
+        return ret == QtWidgets.QMessageBox.Yes
 
     def reset(self):
         """Reset some or all of the key overrides
