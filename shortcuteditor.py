@@ -509,7 +509,7 @@ class ShortcutEditorWidget(QtWidgets.QDialog):
             # ..and also filter by the shortcut, if one is specified
             key_match = True
             if self.key_filter.shortcut().toString() != "":
-                key_match = menuitem['menuobj'].shortcut() == self.key_filter.shortcut()
+                key_match = menuitem['menuobj'].action().shortcut() == self.key_filter.shortcut()
 
             keep_result = all([found, key_match])
             self.table.setRowHidden(rownum, not keep_result)
@@ -539,7 +539,7 @@ class ShortcutEditorWidget(QtWidgets.QDialog):
 
         # Add items
         for rownum, menuitem in enumerate(menu_items):
-            shortcut = QtGui.QKeySequence(menuitem['menuobj'].shortcut())
+            shortcut = QtGui.QKeySequence(menuitem['menuobj'].action().shortcut())
 
             widget = KeySequenceWidget()
             widget.setShortcut(shortcut)
@@ -561,10 +561,10 @@ class ShortcutEditorWidget(QtWidgets.QDialog):
         shortcut = shortcut_widget.shortcut().toString()
         menu_items = self.list_menu()
         for index, other_item in enumerate(menu_items):
-            if shortcut and other_item['menuobj'].shortcut() == shortcut and other_item != menuitem:
+            if shortcut and other_item['menuobj'].action().shortcut() == shortcut and other_item != menuitem:
                 answer = self.confirm_override(other_item, shortcut)
                 if not answer:
-                    shortcut_widget.setShortcut(QtGui.QKeySequence(menuitem['menuobj'].shortcut()))
+                    shortcut_widget.setShortcut(QtGui.QKeySequence(menuitem['menuobj'].action().shortcut()))
                     return
 
                 # Un-assign the shortcut first
