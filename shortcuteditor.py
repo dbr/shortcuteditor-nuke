@@ -20,7 +20,8 @@ import nuke
 import os
 try:
     # Prefer Qt.py when available
-    from Qt import QtCore, QtGui, QtWidgets, Qt
+    from Qt import QtCore, QtGui, QtWidgets
+    from Qt.QtCore import Qt
 except ImportError:
     try:
         # PySide2 for default Nuke 11
