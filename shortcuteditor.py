@@ -359,25 +359,13 @@ def _overrides_as_code(overrides):
         menus.setdefault(menu_name, []).append((path, key))
 
     lines = []
-    lines.append("def apply_key_overrides():")
-    lines.append("    overrides = {")
-    for menu, all_path_key in menus.items():
-        lines.append("        'Nuke': [")
-        for path, key in all_path_key:
-            lines.append("            (%r, %r)," % (path, key))
-        lines.append("        ],")
-        lines.append("    }")
-        lines.append("    for menu_name, overrides in overrides:")
-        lines.append("        m = nuke.menu(menu_name)")
-        lines.append("        for path, key in overrides:")
-        lines.append("            item = m.findItem(path)")
-        lines.append("            if item is None:")
-        lines.append("                print 'WARNING: %r (menu: %r) does not exist, cannot restore key %r' % (path, menu, key)")
-        lines.append("            else:")
-        lines.append("                item.setShortcut(key)")
-        return "\n".join(lines)
-
-    lines.append("apply_key_overrides()")
+    for menu, things in menus.items():
+        lines.append("cur_menu = nuke.menu(%r)" % menu)
+        for path, key in things:
+            lines.append("m = cur_menu.findItem(%r)" % path)
+            lines.append("if m is not None:")
+            lines.append("    m.setShortcut(%r)" % key)
+            lines.append("")
     return "\n".join(lines)
 
 
@@ -477,6 +465,12 @@ class ShortcutEditorWidget(QtWidgets.QDialog):
         button_reset.clicked.connect(self.reset)
         layout.addWidget(button_reset)
         self.button_reset = button_reset
+
+        button_as_code = QtWidgets.QPushButton("Copy as menu.py snippet...")
+        button_as_code.clicked.connect(self.show_as_code)
+        layout.addWidget(button_as_code)
+        self.button_as_code = button_as_code
+
 
         button_close = QtWidgets.QPushButton("Close")
         button_close.clicked.connect(self.close)
@@ -625,6 +619,29 @@ class ShortcutEditorWidget(QtWidgets.QDialog):
             pass
         else:
             raise RuntimeError("Unhandled button")
+
+    def show_as_code(self):
+        mb = QtWidgets.QMessageBox(
+            self,
+        )
+
+        mb.setText("menu.py snippet exporter")
+
+        mb.setInformativeText(
+            "A Python snippet has been generated in the 'Show Details' window\n\n"
+            "This can be placed in menu.py and it can be shared with people not using the Shortcut Editor UI.\n\n"
+            "Important note: Using this snippet will act confusingly if used while Shortcut Editor UI is also installed."
+        )
+        mb.setDetailedText(
+            "# ShortcutEditor generated snippet:\n" + 
+            _overrides_as_code(self.settings.overrides)
+            + "# End ShortcutEditor generated snippet"
+        )
+        mb.setIcon(QtWidgets.QMessageBox.Warning)
+
+        mb.setStandardButtons(QtWidgets.QMessageBox.Close)
+        mb.setDefaultButton(QtWidgets.QMessageBox.Close)
+        ret = mb.exec_()
 
     def closeEvent(self, evt):
         """Save when closing the UI
