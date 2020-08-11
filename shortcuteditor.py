@@ -11,6 +11,7 @@ try:
 except Exception:
     import traceback
     traceback.print_exc()
+# Note: It is recommended this goes near the end of menu.py
 """
 
 __version__ = "1.2dev"
@@ -152,12 +153,14 @@ class KeySequenceButton(QtWidgets.QPushButton):
 
         ev.accept()
 
+        all_modifiers = (-1, Qt.Key_Shift, Qt.Key_Control, Qt.Key_AltGr,
+                            Qt.Key_Alt, Qt.Key_Meta, Qt.Key_Menu)
+
         key = ev.key()
         # check if key is a modifier or a character key without modifier (and if that is allowed)
         if (
             # don't append the key if the key is -1 (garbage) or a modifier ...
-            key not in (-1, Qt.Key_AltGr, Qt.Key_Shift, Qt.Key_Control,
-                            Qt.Key_Alt, Qt.Key_Meta, Qt.Key_Menu)
+            key not in all_modifiers
             # or if this is the first key and without modifier and modifierless keys are not allowed
             and (self._modifierlessAllowed
                  or self._recseq.count() > 0
