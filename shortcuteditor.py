@@ -567,15 +567,18 @@ class ShortcutEditorWidget(QtWidgets.QDialog):
         for index, other_item in enumerate(menu_items):
             if shortcut and other_item['menuobj'].action().shortcut() == shortcut and other_item is not menuitem:
                 answer = self._confirm_override(other_item, shortcut)
-                if not answer:
+                if answer is None:
                     # Cancel editing - reset widget to original key then stop
                     shortcut_widget.setShortcut(QtGui.QKeySequence(menuitem['menuobj'].action().shortcut()))
                     return
-
-                # Un-assign the shortcut first
-                other_item['menuobj'].setShortcut('')
-                self.settings.overrides["%s/%s" % (other_item['top_menu_name'], other_item['menupath'])] = ""
-                self.table.cellWidget(index, 0).setShortcut(QtGui.QKeySequence(""))
+                elif answer is True:
+                    # Un-assign the shortcut first
+                    other_item['menuobj'].setShortcut('')
+                    self.settings.overrides["%s/%s" % (other_item['top_menu_name'], other_item['menupath'])] = ""
+                    self.table.cellWidget(index, 0).setShortcut(QtGui.QKeySequence(""))
+                elif answer is False:
+                    # Keep both shortcuts
+                    pass
 
         menuitem['menuobj'].setShortcut(shortcut)
         self.settings.overrides[
@@ -589,13 +592,26 @@ class ShortcutEditorWidget(QtWidgets.QDialog):
         mb.setText("Shortcut '%s' is already assigned to %s (Menu: %s)." % (shortcut,
                                                                             menu_item['menupath'],
                                                                             menu_item['top_menu_name']))
-        mb.setInformativeText("Are you sure you want to replace it?")
+        mb.setInformativeText("If two shortucts have same key and are in same context (e.g both Viewer shortcuts), they may not function as expected")
         mb.setIcon(QtWidgets.QMessageBox.Warning)
 
-        mb.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No)
+        mb.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No | QtWidgets.QMessageBox.Cancel)
         mb.setDefaultButton(QtWidgets.QMessageBox.Yes)
+
+        button_yes = mb.button(QtWidgets.QMessageBox.Yes)
+        button_yes.setText('Clear existing shortcut')
+
+        button_yes = mb.button(QtWidgets.QMessageBox.No)
+        button_yes.setText('Keep both')
+
         ret = mb.exec_()
-        return ret == QtWidgets.QMessageBox.Yes
+        # TODO: More explicit return value than Optional[bool]?
+        if ret == QtWidgets.QMessageBox.Yes:
+            return True
+        elif ret == QtWidgets.QMessageBox.No:
+            return False
+        elif ret == QtWidgets.QMessageBox.Cancel:
+            return None
 
     def reset(self):
         """Reset some or all of the key overrides
