@@ -14,7 +14,7 @@ except Exception:
 # Note: It is recommended this goes near the end of menu.py
 """
 
-__version__ = "1.2dev"
+__version__ = "1.2"
 
 
 import nuke
