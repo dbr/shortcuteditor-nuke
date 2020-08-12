@@ -18,7 +18,7 @@ in `~/.nuke/`)
 
     mkdir -p ~/.nuke
     cd ~/.nuke
-    curl -O https://raw.github.com/dbr/shortcuteditor-nuke/master/shortcuteditor.py
+    curl -O https://raw.githubusercontent.com/dbr/shortcuteditor-nuke/v1.2/shortcuteditor.py
 
 
 Then in `~/.nuke/menu.py` add the following:
