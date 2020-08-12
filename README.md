@@ -1,7 +1,7 @@
 # Nuke shortcut editor
 
 `shortcuteditor` is a keyboard shortcut editor for
-[The Foundry's Nuke](http://www.thefoundry.co.uk/products/nuke)
+[Foundry's Nuke](https://www.foundry.com/products/nuke)
 
 It allows you to quickly bind keyboard shortcuts to existing menu
 items without writing Python code
