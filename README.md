@@ -31,9 +31,6 @@ Then in `~/.nuke/menu.py` add the following:
 
 ## Notes
 
-Should work in Nuke 6.3v3 onwards (when the nuke.Menu.setShortcut
-method was added)
-
 The shortcuts overrides are saved in `~/.nuke/shortcuteditor_settings.json`
 
 You can search for menu items either by name ("Search by text"), or by
@@ -41,27 +38,31 @@ existing shortcut ("Search by key"), or both (rarely necessary)
 
 There are a few shortcuts you cannot (easily) override in the viewer
 context, specifically things like the r/g/b and z/x/c shortcuts are
-hardwired (as of Nuke 7 - might change in the future)
+hardwired.
 
-If you are changing an existing shortcut, be sure to clear the old
-usage of the key (using the "Search by key")
+If you are changing an existing shortcut, be sure to clear the old usage of
+the key. A popup appears to help with this if adding conflicting shortcuts.
 
 
 ## Future improvements
 
-- Handle conflicting shortcuts better (highlight the shortcut in red
-  when it conflicts or something?)
-- Ability to view/clear specific overrides, rather than global
-  "Reset.."
-
+For a list of requested and planned features, see the project's issue tracker
+on GitHub, https://github.com/dbr/shortcuteditor-nuke/issues
 
 ## Change log
 
-* `v1.0`
- * Initial version
-* `v1.1`
+* `v1.2` - 2020-08-12
+  * Updated to support Nuke 11 and 12.
+  * Warns when overriding an existing shortcut ([PR #12](https://github.com/dbr/shortcuteditor-nuke/pull/12) by [herronelou](https://github.com/herronelou))
+  * Added button to export the key-overrides as a Python snippet.
+  * Faster UI update for searching
+
+* `v1.1` - 2014-08-23
  * Fixed error in error handling when a shortcut is added for a menu
-   item which disappers.
+   item which disappears.
  * `nuke_setup` method works as expected when installed earlier in
    NUKE_PATH. Previously it might run before some menu items were
    added, so the shortcut was never set.
+
+* `v1.0` - 2013-10-09
+ * Initial version
