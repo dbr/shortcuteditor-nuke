@@ -403,7 +403,7 @@ class Overrides(object):
             _restore_overrides(self.overrides)
 
         else:
-            nuke.warning("Wrong version of shortcut, nothing loaded (version was %s expected 1), path was %r" % (
+            nuke.warning("Wrong version of shortcut editor config, nothing loaded (version was %s expected 1), path was %r" % (
                 int(settings['version']),
                 self.settings_path))
             return
@@ -500,7 +500,8 @@ class ShortcutEditorWidget(QtWidgets.QDialog):
             self._search_timer.start(200)  # 200ms timeout
 
     def filter_entries(self):
-        """ Iterate through the rows in the table and hide/show according to filters"""
+        """Iterate through the rows in the table and hide/show according to filters
+        """
         # We use the fact that self.list_menu() would never change to our advantage
         menu_items = self.list_menu()
 
@@ -564,9 +565,10 @@ class ShortcutEditorWidget(QtWidgets.QDialog):
         shortcut = shortcut_widget.shortcut().toString()
         menu_items = self.list_menu()
         for index, other_item in enumerate(menu_items):
-            if shortcut and other_item['menuobj'].action().shortcut() == shortcut and other_item != menuitem:
-                answer = self.confirm_override(other_item, shortcut)
+            if shortcut and other_item['menuobj'].action().shortcut() == shortcut and other_item is not menuitem:
+                answer = self._confirm_override(other_item, shortcut)
                 if not answer:
+                    # Cancel editing - reset widget to original key then stop
                     shortcut_widget.setShortcut(QtGui.QKeySequence(menuitem['menuobj'].action().shortcut()))
                     return
 
@@ -579,8 +581,9 @@ class ShortcutEditorWidget(QtWidgets.QDialog):
         self.settings.overrides[
             "%s/%s" % (menuitem['top_menu_name'], menuitem['menupath'])] = shortcut_widget.shortcut().toString()
 
-    def confirm_override(self, menu_item, shortcut):
-        """ Ask the user if they are sure they want to override the shortcut"""
+    def _confirm_override(self, menu_item, shortcut):
+        """Ask the user if they are sure they want to override the shortcut
+        """
         mb = QtWidgets.QMessageBox(self)
 
         mb.setText("Shortcut '%s' is already assigned to %s (Menu: %s)." % (shortcut,
@@ -624,6 +627,9 @@ class ShortcutEditorWidget(QtWidgets.QDialog):
             raise RuntimeError("Unhandled button")
 
     def show_as_code(self):
+        """Show overrides as a Python snippet
+        """
+
         mb = QtWidgets.QMessageBox(
             self,
         )
@@ -655,6 +661,8 @@ class ShortcutEditorWidget(QtWidgets.QDialog):
         QtWidgets.QWidget.closeEvent(self, evt)
 
     def undercursor(self):
+        """Move window to under cursor, avoiding putting it off-screen
+        """
         def clamp(val, mi, ma):
             return max(min(val, ma), mi)
 
