@@ -8,6 +8,8 @@ items without writing Python code
 
 [![tabtabtab](imgs/shortcuteditor_thumbnail.png)](imgs/shortcuteditor.png)
 
+Watch the [first episode of Lars Wemmje's "Useful Nuke Tools"](https://vimeo.com/channels/nukepedia/135306112) for more details!
+
 
 ## Installation
 
