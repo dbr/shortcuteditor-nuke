@@ -298,7 +298,7 @@ def _load_yaml(path):
     def _load_internal():
         import json
         if not os.path.isfile(path):
-            print "Settings file %r does not exist" % (path)
+            print("Settings file %r does not exist" % (path))
             return
         f = open(path)
         overrides = json.load(f)
@@ -309,7 +309,7 @@ def _load_yaml(path):
     try:
         return _load_internal()
     except Exception:
-        print "Error loading %r" % path
+        print("Error loading %r" % path)
         import traceback
         traceback.print_exc()
 
@@ -323,7 +323,7 @@ def _save_yaml(obj, path):
         if not os.path.isdir(ndir):
             try:
                 os.makedirs(ndir)
-            except OSError, e:
+            except OSError as e:
                 if e.errno != 17:  # errno 17 is "already exists"
                     raise
 
@@ -337,7 +337,7 @@ def _save_yaml(obj, path):
     try:
         _save_internal()
     except Exception:
-        print "Error saving node weights"
+        print("Error saving shortcuteditor settings")
         import traceback
         traceback.print_exc()
 
@@ -350,7 +350,6 @@ def _restore_overrides(overrides):
         if item is None:
             nuke.warning("WARNING: %r (menu: %r) does not exist?" % (path, menu_name))
         else:
-            # print "Restoring shortcut %r for %r (menu: %r)" % (key, path, menu_name)
             item.setShortcut(key)
 
 

@@ -18,7 +18,7 @@ in `~/.nuke/`)
 
     mkdir -p ~/.nuke
     cd ~/.nuke
-    curl -O https://raw.githubusercontent.com/dbr/shortcuteditor-nuke/v1.2/shortcuteditor.py
+    curl -O https://raw.githubusercontent.com/dbr/shortcuteditor-nuke/v1.3/shortcuteditor.py
 
 
 Then in `~/.nuke/menu.py` add the following:
@@ -52,6 +52,9 @@ For a list of requested and planned features, see the project's issue tracker
 on GitHub, https://github.com/dbr/shortcuteditor-nuke/issues
 
 ## Change log
+
+* `v1.3` - 2021-08-10
+  * Small fixes to support Nuke 13
 
 * `v1.2` - 2020-08-12
   * Updated to support Nuke 11 and 12.
