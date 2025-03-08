@@ -24,14 +24,18 @@ try:
     from Qt import QtCore, QtGui, QtWidgets
     from Qt.QtCore import Qt
 except ImportError:
-    try:
+    if nuke.NUKE_VERSION_MAJOR < 11:
+        # PySide for Nuke up to 10
+        from PySide import QtCore, QtGui, QtGui as QtWidgets
+        from PySide.QtCore import Qt
+    elif nuke.NUKE_VERSION_MAJOR < 16:
         # PySide2 for default Nuke 11
         from PySide2 import QtCore, QtGui, QtWidgets
         from PySide2.QtCore import Qt
-    except ImportError:
-        # Or PySide for Nuke 10
-        from PySide import QtCore, QtGui, QtGui as QtWidgets
-        from PySide.QtCore import Qt
+    else:
+        # PySide6 for Nuke 16+
+        from PySide6 import QtCore, QtGui, QtWidgets
+        from PySide6.QtCore import Qt
 
 
 class KeySequenceWidget(QtWidgets.QWidget):
