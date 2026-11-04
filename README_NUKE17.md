@@ -38,11 +38,11 @@ Do **not** distribute your private `shortcuteditor_settings.json`; the plugin st
 - Fix duplicate shortcut matching to compare normalized shortcut strings.
 - Preserve version-1 JSON settings format.
 
-## Contributing upstream
+## Upstream contribution and related work
 
-Proposed workflow: fork the [original repository](https://github.com/dbr/shortcuteditor-nuke), create a branch, incorporate and review this patch against the latest upstream `master`, then open a PR. This bundle was built from a user-provided copy of the original `shortcuteditor.py`; check and resolve any upstream differences before submitting.
+This patch is maintained in [@omiddabir's fork](https://github.com/omiddabir/shortcuteditor-nuke/tree/feature/nuke17-pyside6-compat) and proposed for the [original repository](https://github.com/dbr/shortcuteditor-nuke). Two earlier, still-open upstream contributions address Nuke 16 compatibility: [PR #15](https://github.com/dbr/shortcuteditor-nuke/pull/15) and [PR #16](https://github.com/dbr/shortcuteditor-nuke/pull/16). This patch additionally updates Qt6 key-sequence handling, screen geometry, dialogs and shortcut-conflict comparisons, with a user-confirmed Nuke 17.1v1 test.
 
-The original repository describes the latest published release as v1.3 (2021); the internal version string of the supplied file was `1.2` and the patched source uses `1.2-nuke17-qt6.1`. Do not imply this is a new official upstream release.
+The upstream README lists v1.3 (2021) as the latest published release, while the upstream `master` source still identifies itself internally as `1.2`. This patch uses `1.2-nuke17-qt6.1` to distinguish the community port; it is not an official upstream release.
 
 ## Licensing
 
