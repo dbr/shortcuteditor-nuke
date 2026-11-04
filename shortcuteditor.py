@@ -14,24 +14,39 @@ except Exception:
 # Note: It is recommended this goes near the end of menu.py
 """
 
-__version__ = "1.2"
+__version__ = "1.2-nuke17-qt6.1"
 
 
 import nuke
 import os
-try:
-    # Prefer Qt.py when available
-    from Qt import QtCore, QtGui, QtWidgets
-    from Qt.QtCore import Qt
-except ImportError:
-    try:
-        # PySide2 for default Nuke 11
-        from PySide2 import QtCore, QtGui, QtWidgets
-        from PySide2.QtCore import Qt
-    except ImportError:
-        # Or PySide for Nuke 10
-        from PySide import QtCore, QtGui, QtGui as QtWidgets
-        from PySide.QtCore import Qt
+from PySide6 import QtCore, QtGui, QtWidgets
+
+# Nuke 16+ uses PySide6 / Qt6.  Import the Qt enums from the Qt6 namespaces.
+Qt = QtCore.Qt
+
+
+def _enum_int(value):
+    """Return the integer behind a PySide6 Qt enum or flag."""
+    return int(value.value) if hasattr(value, "value") else int(value)
+
+
+SHIFT = _enum_int(Qt.KeyboardModifier.ShiftModifier)
+CTRL = _enum_int(Qt.KeyboardModifier.ControlModifier)
+ALT = _enum_int(Qt.KeyboardModifier.AltModifier)
+META = _enum_int(Qt.KeyboardModifier.MetaModifier)
+ALL_MODIFIERS = SHIFT | CTRL | ALT | META
+
+
+def _as_sequence(value):
+    """Convert a Nuke/Qt shortcut (str, QAction value, QKeySequence) to Qt6."""
+    if isinstance(value, QtGui.QKeySequence):
+        return value
+    return QtGui.QKeySequence(value)
+
+
+def _portable(value):
+    """Canonical string form, for matching and saving shortcuts."""
+    return _as_sequence(value).toString(QtGui.QKeySequence.SequenceFormat.PortableText)
 
 
 class KeySequenceWidget(QtWidgets.QWidget):
@@ -56,7 +71,8 @@ class KeySequenceWidget(QtWidgets.QWidget):
         self.setLayout(layout)
 
         self.button = KeySequenceButton(self)
-        self.clearButton = QtWidgets.QPushButton(self, iconSize=QtCore.QSize(16, 16))
+        self.clearButton = QtWidgets.QPushButton(self)
+        self.clearButton.setIconSize(QtCore.QSize(16, 16))
         self.clearButton.setText("Clear")
         self.clearButton.setFixedWidth(50)
 
@@ -111,7 +127,7 @@ class KeySequenceButton(QtWidgets.QPushButton):
         self._timer.timeout.connect(self.doneRecording)
 
     def setKeySequence(self, seq):
-        self._seq = seq
+        self._seq = _as_sequence(seq)
         self.updateDisplay()
 
     def keySequence(self):
@@ -120,16 +136,20 @@ class KeySequenceButton(QtWidgets.QPushButton):
         return self._seq
 
     def updateDisplay(self):
+        native = QtGui.QKeySequence.SequenceFormat.NativeText
         if self._isrecording:
-            s = self._recseq.toString(QtGui.QKeySequence.NativeText).replace('&', '&&')
+            s = self._recseq.toString(native).replace('&', '&&')
             if self._modifiers:
-                if s: s += ","
-                s += QtGui.QKeySequence(self._modifiers).toString(QtGui.QKeySequence.NativeText)
+                names = [(CTRL, "Ctrl"), (ALT, "Alt"),
+                         (SHIFT, "Shift"), (META, "Meta")]
+                pending = "+".join(name for mask, name in names
+                                   if self._modifiers & mask)
+                s = (s + ", " if s else "") + pending
             elif self._recseq.isEmpty():
                 s = "Input"
             s += " ..."
         else:
-            s = self._seq.toString(QtGui.QKeySequence.NativeText).replace('&', '&&')
+            s = self._seq.toString(native).replace('&', '&&')
         self.setText(s)
 
     def isRecording(self):
@@ -138,7 +158,7 @@ class KeySequenceButton(QtWidgets.QPushButton):
     def event(self, ev):
         if self._isrecording:
             # prevent Qt from special casing Tab and Backtab
-            if ev.type() == QtCore.QEvent.KeyPress:
+            if ev.type() == QtCore.QEvent.Type.KeyPress:
                 self.keyPressEvent(ev)
                 return True
         return QtWidgets.QPushButton.event(self, ev)
@@ -147,48 +167,52 @@ class KeySequenceButton(QtWidgets.QPushButton):
         if not self._isrecording:
             return QtWidgets.QPushButton.keyPressEvent(self, ev)
         if ev.isAutoRepeat():
+            ev.accept()
             return
-        # modifiers = int(ev.modifiers() & (Qt.SHIFT | Qt.CTRL | Qt.ALT | Qt.META))
-        modifiers = ev.modifiers()
 
+        modifiers = _enum_int(ev.modifiers()) & ALL_MODIFIERS
+        key = int(ev.key())
         ev.accept()
 
-        all_modifiers = (-1, Qt.Key_Shift, Qt.Key_Control, Qt.Key_AltGr,
-                            Qt.Key_Alt, Qt.Key_Meta, Qt.Key_Menu)
+        modifier_keys = {
+            -1,
+            _enum_int(Qt.Key.Key_unknown),
+            _enum_int(Qt.Key.Key_Shift),
+            _enum_int(Qt.Key.Key_Control),
+            _enum_int(Qt.Key.Key_AltGr),
+            _enum_int(Qt.Key.Key_Alt),
+            _enum_int(Qt.Key.Key_Meta),
+            _enum_int(Qt.Key.Key_Menu),
+        }
+        special_shift_keys = {
+            _enum_int(Qt.Key.Key_Return),
+            _enum_int(Qt.Key.Key_Space),
+            _enum_int(Qt.Key.Key_Tab),
+            _enum_int(Qt.Key.Key_Backtab),
+            _enum_int(Qt.Key.Key_Backspace),
+            _enum_int(Qt.Key.Key_Delete),
+            _enum_int(Qt.Key.Key_Escape),
+        }
 
-        key = ev.key()
-        # check if key is a modifier or a character key without modifier (and if that is allowed)
-        if (
-            # don't append the key if the key is -1 (garbage) or a modifier ...
-            key not in all_modifiers
-            # or if this is the first key and without modifier and modifierless keys are not allowed
-            and (self._modifierlessAllowed
-                 or self._recseq.count() > 0
-                 or modifiers & ~Qt.SHIFT
-                 or not ev.text()
-                 or (modifiers & Qt.SHIFT
-                     and key in (Qt.Key_Return, Qt.Key_Space, Qt.Key_Tab, Qt.Key_Backtab,
-                                 Qt.Key_Backspace, Qt.Key_Delete, Qt.Key_Escape)))):
+        if (key not in modifier_keys
+                and (self._modifierlessAllowed
+                     or self._recseq.count() > 0
+                     or modifiers & ~SHIFT
+                     or not ev.text()
+                     or ((modifiers & SHIFT) and key in special_shift_keys))):
+            # Qt reports Shift+Tab as Backtab. Save the portable Shift+Tab.
+            if key == _enum_int(Qt.Key.Key_Backtab) and (modifiers & SHIFT):
+                key = _enum_int(Qt.Key.Key_Tab)
+            elif (_enum_int(Qt.Key.Key_Exclam) <= key <= _enum_int(Qt.Key.Key_At)
+                  or _enum_int(Qt.Key.Key_Z) < key <= 0xFF):
+                # On layouts where punctuation requires Shift, the key code
+                # already represents the shifted character.
+                modifiers &= ~SHIFT
 
-            # change Shift+Backtab into Shift+Tab
-            if key == Qt.Key_Backtab and modifiers & Qt.SHIFT:
-                key = Qt.Key_Tab | modifiers
-
-            # remove the Shift modifier if it doen't make sense..
-            elif (Qt.Key_Exclam <= key <= Qt.Key_At
-                  # ... e.g ctrl+shift+! is impossible on, some,
-                  # keyboards (because ! is shift+1)
-                  or Qt.Key_Z < key <= 0x0ff):
-                key = key | (modifiers & ~int(Qt.SHIFT))
-
-            else:
-                key = key | modifiers
-
-            # append max number of keystrokes
+            # This editor intentionally records one keystroke only.
+            # Qt6 QKeySequence accepts the combined integer key code.
             if self._recseq.count() < self.MAX_NUM_KEYSTROKES:
-                l = list(self._recseq)
-                l.append(key)
-                self._recseq = QtGui.QKeySequence(*l)
+                self._recseq = QtGui.QKeySequence(key | modifiers)
 
         self._modifiers = modifiers
         self.controlTimer()
@@ -197,10 +221,8 @@ class KeySequenceButton(QtWidgets.QPushButton):
     def keyReleaseEvent(self, ev):
         if not self._isrecording:
             return QtWidgets.QPushButton.keyReleaseEvent(self, ev)
-        modifiers = int(ev.modifiers() & (Qt.SHIFT | Qt.CTRL | Qt.ALT | Qt.META))
+        self._modifiers = _enum_int(ev.modifiers()) & ALL_MODIFIERS
         ev.accept()
-
-        self._modifiers = modifiers
         self.controlTimer()
         self.updateDisplay()
 
@@ -221,7 +243,7 @@ class KeySequenceButton(QtWidgets.QPushButton):
         self.setStyleSheet("text-align: left;")
         self._isrecording = True
         self._recseq = QtGui.QKeySequence()
-        self._modifiers = int(QtWidgets.QApplication.keyboardModifiers() & (Qt.SHIFT | Qt.CTRL | Qt.ALT | Qt.META))
+        self._modifiers = _enum_int(QtWidgets.QApplication.keyboardModifiers()) & ALL_MODIFIERS
         self.grabKeyboard()
         self.updateDisplay()
 
@@ -511,8 +533,9 @@ class ShortcutEditorWidget(QtWidgets.QDialog):
 
             # ..and also filter by the shortcut, if one is specified
             key_match = True
-            if self.key_filter.shortcut().toString() != "":
-                key_match = menuitem['menuobj'].action().shortcut() == self.key_filter.shortcut()
+            if not self.key_filter.shortcut().isEmpty():
+                key_match = (_portable(menuitem['menuobj'].action().shortcut())
+                             == _portable(self.key_filter.shortcut()))
 
             keep_result = all([found, key_match])
             self.table.setRowHidden(rownum, not keep_result)
@@ -542,7 +565,7 @@ class ShortcutEditorWidget(QtWidgets.QDialog):
 
         # Add items
         for rownum, menuitem in enumerate(menu_items):
-            shortcut = QtGui.QKeySequence(menuitem['menuobj'].action().shortcut())
+            shortcut = _as_sequence(menuitem['menuobj'].action().shortcut())
 
             widget = KeySequenceWidget()
             widget.setShortcut(shortcut)
@@ -561,14 +584,16 @@ class ShortcutEditorWidget(QtWidgets.QDialog):
         """
 
         # Check if shortcut is already assigned to something else:
-        shortcut = shortcut_widget.shortcut().toString()
+        shortcut = _portable(shortcut_widget.shortcut())
         menu_items = self.list_menu()
         for index, other_item in enumerate(menu_items):
-            if shortcut and other_item['menuobj'].action().shortcut() == shortcut and other_item is not menuitem:
+            if (shortcut
+                    and other_item is not menuitem
+                    and _portable(other_item['menuobj'].action().shortcut()) == shortcut):
                 answer = self._confirm_override(other_item, shortcut)
                 if answer is None:
                     # Cancel editing - reset widget to original key then stop
-                    shortcut_widget.setShortcut(QtGui.QKeySequence(menuitem['menuobj'].action().shortcut()))
+                    shortcut_widget.setShortcut(_as_sequence(menuitem['menuobj'].action().shortcut()))
                     return
                 elif answer is True:
                     # Un-assign the shortcut first
@@ -581,7 +606,7 @@ class ShortcutEditorWidget(QtWidgets.QDialog):
 
         menuitem['menuobj'].setShortcut(shortcut)
         self.settings.overrides[
-            "%s/%s" % (menuitem['top_menu_name'], menuitem['menupath'])] = shortcut_widget.shortcut().toString()
+            "%s/%s" % (menuitem['top_menu_name'], menuitem['menupath'])] = shortcut
 
     def _confirm_override(self, menu_item, shortcut):
         """Ask the user if they are sure they want to override the shortcut
@@ -592,24 +617,24 @@ class ShortcutEditorWidget(QtWidgets.QDialog):
                                                                             menu_item['menupath'],
                                                                             menu_item['top_menu_name']))
         mb.setInformativeText("If two shortucts have same key and are in same context (e.g both Viewer shortcuts), they may not function as expected")
-        mb.setIcon(QtWidgets.QMessageBox.Warning)
+        mb.setIcon(QtWidgets.QMessageBox.Icon.Warning)
 
-        mb.setStandardButtons(QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No | QtWidgets.QMessageBox.Cancel)
-        mb.setDefaultButton(QtWidgets.QMessageBox.Yes)
+        mb.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No | QtWidgets.QMessageBox.StandardButton.Cancel)
+        mb.setDefaultButton(QtWidgets.QMessageBox.StandardButton.Yes)
 
-        button_yes = mb.button(QtWidgets.QMessageBox.Yes)
+        button_yes = mb.button(QtWidgets.QMessageBox.StandardButton.Yes)
         button_yes.setText('Clear existing shortcut')
 
-        button_yes = mb.button(QtWidgets.QMessageBox.No)
+        button_yes = mb.button(QtWidgets.QMessageBox.StandardButton.No)
         button_yes.setText('Keep both')
 
-        ret = mb.exec_()
+        ret = mb.exec()
         # TODO: More explicit return value than Optional[bool]?
-        if ret == QtWidgets.QMessageBox.Yes:
+        if ret == QtWidgets.QMessageBox.StandardButton.Yes:
             return True
-        elif ret == QtWidgets.QMessageBox.No:
+        elif ret == QtWidgets.QMessageBox.StandardButton.No:
             return False
-        elif ret == QtWidgets.QMessageBox.Cancel:
+        elif ret == QtWidgets.QMessageBox.StandardButton.Cancel:
             return None
 
     def reset(self):
@@ -626,17 +651,17 @@ class ShortcutEditorWidget(QtWidgets.QDialog):
             "Will reset the following to defaults:\n\n"
             + "\n".join("%s (key: %s)" % (p, k or "(blank)") for (p, k) in self.settings.overrides.items()))
 
-        mb.setIcon(QtWidgets.QMessageBox.Warning)
+        mb.setIcon(QtWidgets.QMessageBox.Icon.Warning)
 
-        mb.setStandardButtons(QtWidgets.QMessageBox.Reset | QtWidgets.QMessageBox.Cancel)
-        mb.setDefaultButton(QtWidgets.QMessageBox.Cancel)
-        ret = mb.exec_()
+        mb.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Reset | QtWidgets.QMessageBox.StandardButton.Cancel)
+        mb.setDefaultButton(QtWidgets.QMessageBox.StandardButton.Cancel)
+        ret = mb.exec()
 
-        if ret == QtWidgets.QMessageBox.Reset:
+        if ret == QtWidgets.QMessageBox.StandardButton.Reset:
             self.settings.clear()
             self.close()
             QtWidgets.QMessageBox.information(None, "Reset complete", "You must restart Nuke for this to take effect")
-        elif ret == QtWidgets.QMessageBox.Cancel:
+        elif ret == QtWidgets.QMessageBox.StandardButton.Cancel:
             pass
         else:
             raise RuntimeError("Unhandled button")
@@ -661,11 +686,11 @@ class ShortcutEditorWidget(QtWidgets.QDialog):
             _overrides_as_code(self.settings.overrides)
             + "# End ShortcutEditor generated snippet"
         )
-        mb.setIcon(QtWidgets.QMessageBox.Warning)
+        mb.setIcon(QtWidgets.QMessageBox.Icon.Warning)
 
-        mb.setStandardButtons(QtWidgets.QMessageBox.Close)
-        mb.setDefaultButton(QtWidgets.QMessageBox.Close)
-        ret = mb.exec_()
+        mb.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Close)
+        mb.setDefaultButton(QtWidgets.QMessageBox.StandardButton.Close)
+        ret = mb.exec()
 
     def closeEvent(self, evt):
         """Save when closing the UI
@@ -682,11 +707,16 @@ class ShortcutEditorWidget(QtWidgets.QDialog):
             return max(min(val, ma), mi)
 
         # Get cursor position, and screen dimensions on active screen
-        cursor = QtGui.QCursor().pos()
-        screen = QtWidgets.QDesktopWidget().screenGeometry(cursor)
+        cursor = QtGui.QCursor.pos()
+        screen_obj = QtGui.QGuiApplication.screenAt(cursor)
+        if screen_obj is None:
+            screen_obj = QtGui.QGuiApplication.primaryScreen()
+        if screen_obj is None:
+            return
+        screen = screen_obj.availableGeometry()
 
         # Get window position so cursor is just over text input
-        xpos = cursor.x() - (self.width()/2)
+        xpos = cursor.x() - (self.width() // 2)
         ypos = cursor.y() - 13
 
         # Clamp window location to prevent it going offscreen
@@ -694,7 +724,7 @@ class ShortcutEditorWidget(QtWidgets.QDialog):
         ypos = clamp(ypos, screen.top(), screen.bottom() - (self.height()-13))
 
         # Move window
-        self.move(xpos, ypos)
+        self.move(int(xpos), int(ypos))
 
 
 def load_shortcuts():
@@ -740,7 +770,7 @@ def gui():
 
     modal = False
     if modal:
-        _sew_instance.exec_()
+        _sew_instance.exec()
     else:
         _sew_instance.show()
 
