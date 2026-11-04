@@ -11,6 +11,10 @@ items without writing Python code
 Watch the [first episode of Lars Wemmje's "Useful Nuke Tools"](https://vimeo.com/channels/nukepedia/135306112) for more details!
 
 
+## Compatibility
+
+The published `v1.3` release linked below targets older versions of Nuke. For the community PySide6 / Qt6 port, see the [Nuke 17 compatibility notes](README_NUKE17.md), including installation and test details. The port has been user-tested on **NukeX 17.1v1 for Windows**; other Nuke versions and platforms have not yet been verified.
+
 ## Installation
 
 Put `shortcuteditor.py` on PYTHONPATH or NUKE_PATH somewhere (probably
